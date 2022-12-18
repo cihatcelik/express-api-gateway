@@ -1,0 +1,56 @@
+http:
+  port: 8080
+admin:
+  port: 9876
+  host: localhost
+apiEndpoints:
+  api-cars:
+    host: localhost
+    paths: ['/cars','/cars/*']
+  api-dummyjson:
+    host: localhost
+    paths: ['/*']
+serviceEndpoints:
+  cars:
+    url: 'https://myfakeapi.com/api/'
+  dummyjson:
+    url: 'https://dummyjson.com/'
+policies:
+  - basic-auth
+  - cors
+  - expression
+  - key-auth
+  - log
+  - oauth2
+  - proxy
+  - rate-limit
+pipelines:
+  default:
+    apiEndpoints:
+      - api-cars
+    policies:
+      - log:
+          - action:
+              message : ${req.method} ${req.originalUrl}
+      - rate-limit:
+          - action:
+              max: 200
+              windowMs: 120000
+              rateLimitBy: "${req.hostname}"
+              message : "Too Many Request"
+      - proxy:
+          - action:
+              serviceEndpoint: cars
+              changeOrigin: true
+  dummyjson-pipelines:
+    apiEndpoints:
+      - api-dummyjson
+    policies:
+      - log:
+          - action:
+              message : ${req.method} ${req.originalUrl}
+      - proxy:
+          - action:
+              serviceEndpoint: dummyjson
+              changeOrigin: true
+              
